@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Nutrition Info Browser Extension",
+  "version": "1.0",
+  "description": "Provides real-time nutritional analysis for online food orders.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": ["*://*/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/sample.png",
+      "48": "icons/sample.png",
+      "128": "icons/sample.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
