@@ -1,26 +1,36 @@
-// Ensure CONFIG is loaded
-if (!window.CONFIG) {
-    console.error("❌ Failed to load API credentials.");
-} else {
-    console.log("✅ API credentials loaded.");
-}
+console.log("✅ content.js is running");
 
-// Function to scan webpage and detect food names
-function detectFoodNames() {
+// Define a list of common food names to improve accuracy
+const foodDictionary = [
+    "burger", "pizza", "sandwich", "wrap", "nuggets", "fries", "salad",
+    "pasta", "hotdog", "donut", "cheeseburger", "sushi", "burrito", "steak",
+    "fish", "beef", "noodles", "rice", "taco", "falafel", "shawarma", "kebab",
+    "wings", "cheese", "sausage", "panini", "gyro", "quesadilla", "ramen",
+    "curry", "muffin", "bagel", "toast", "lasagna", "dimsum", "dumplings", "spring rolls"
+];
+
+// Function to detect food names using AI (compromise.js)
+function detectFoodNamesWithAI() {
     let elements = document.querySelectorAll("p, h1, h2, h3, h4, span, div");
     let foodItems = [];
 
-    let keywords = ["burger", "pizza", "chicken", "sandwich", "wrap", "nuggets", "fries", "salad", "pasta", "hotdog", "donut", "cheeseburger", "sushi", "burrito", "steak", "fish", "beef", "noodles", "rice", "taco", "falafel", "shawarma", "kebab", "wings", "cheese", "sausage"];
-
     elements.forEach(el => {
         let text = el.innerText.trim();
-        if (text.length > 3 && keywords.some(word => text.toLowerCase().includes(word))) {
-            let foodName = text.replace(/KFC|McDonald's|Domino's|Rs\.\d+/gi, "").trim();
+        
+        // Process text using NLP
+        let doc = nlp(text);
+        let detectedWords = doc.nouns().text().toLowerCase().split(" "); // Extract detected nouns
+        
+        // Filter out non-food words
+        let filteredFood = detectedWords.filter(word => foodDictionary.includes(word));
+
+        if (filteredFood.length > 0) {
+            let foodName = filteredFood.join(" "); // Join multiple words if needed
             foodItems.push({ element: el, name: foodName });
         }
     });
 
-    console.log("🔍 Detected Food Names:", foodItems);
+    console.log("🍔 AI Detected Food Names (Filtered):", foodItems);
     insertNutritionButtons(foodItems);
 }
 
@@ -62,18 +72,18 @@ function fetchNutritionData(foodName) {
         headers: headers,
         body: JSON.stringify({ query: foodName }),
     })
-        .then(response => response.json())
-        .then(data => {
-            if (data.foods && data.foods.length > 0) {
-                showNutritionPopup(data.foods[0]);
-            } else {
-                alert("⚠️ No nutrition data found for " + foodName);
-            }
-        })
-        .catch(error => {
-            console.error("❌ API Request Failed:", error);
-            alert("❌ Nutrition API failed.");
-        });
+    .then(response => response.json())
+    .then(data => {
+        if (data.foods && data.foods.length > 0) {
+            showNutritionPopup(data.foods[0]);
+        } else {
+            alert("⚠️ No nutrition data found for " + foodName);
+        }
+    })
+    .catch(error => {
+        console.error("❌ API Request Failed:", error);
+        alert("❌ Nutrition API failed.");
+    });
 }
 
 // Function to show popup with nutrition info
@@ -96,5 +106,5 @@ function showNutritionPopup(foodData) {
     document.body.appendChild(popup);
 }
 
-// Start script
-detectFoodNames();
+// Start AI-based food detection
+detectFoodNamesWithAI();
