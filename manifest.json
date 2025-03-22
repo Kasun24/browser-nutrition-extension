@@ -12,7 +12,7 @@
         "*://*.kfc.lk/*",
         "*://*.burgerking.com/*"
       ],
-      "js": ["compromise.min.js", "config.js", "content.js"],
+      "js": ["compromise.min.js", "content.js"],
       "run_at": "document_idle"
     }
   ],

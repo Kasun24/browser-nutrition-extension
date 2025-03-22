@@ -68,7 +68,7 @@ chrome.storage.local.get(["appId", "apiKey", "extensionEnabled"], (data) => {
     if (selector) {
       elements = document.querySelectorAll(selector);
     } else {
-      console.warn("⚠️ No predefined structure. Using general detection.");
+      console.warn("No predefined structure. Using general detection.");
       elements = document.querySelectorAll(
         "p, h1, h2, h3, h4, span, div, a, li, strong"
       );
@@ -131,12 +131,12 @@ chrome.storage.local.get(["appId", "apiKey", "extensionEnabled"], (data) => {
         if (data.foods && data.foods.length > 0) {
           updateNutritionPopup(data.foods[0]);
         } else {
-          updateNutritionPopup(null, "⚠️ No nutrition data found.");
+          updateNutritionPopup(null, "No nutrition data found.");
         }
       })
       .catch((error) => {
-        console.error("❌ API Request Failed:", error);
-        updateNutritionPopup(null, "❌ Failed to fetch data.");
+        console.error("API Request Failed:", error);
+        updateNutritionPopup(null, "Failed to fetch data.");
       });
   }
 
@@ -200,6 +200,6 @@ chrome.storage.local.get(["appId", "apiKey", "extensionEnabled"], (data) => {
     `;
   }
 
-  // ✅ Only run detection if credentials and toggle are valid
+  // Only run detection if credentials and toggle are valid
   detectFoodNames();
 });
