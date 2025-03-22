@@ -1,6 +1,3 @@
-# Ignore API configuration
-config.js
-
 # Ignore OS and editor-specific files
 .DS_Store
 Thumbs.db

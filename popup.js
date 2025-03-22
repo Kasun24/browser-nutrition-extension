@@ -1,68 +1,84 @@
-import { CONFIG } from "./config.js";
+document.addEventListener("DOMContentLoaded", () => {
+  const appIdInput = document.getElementById("appId");
+  const apiKeyInput = document.getElementById("apiKey");
+  const toggleCheckbox = document.getElementById("toggleExtension");
+  const saveBtn = document.getElementById("saveBtn");
+  const alertBox = document.getElementById("alertBox");
 
-// Listen for messages from content.js (Extracted Food Data)
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "cartData") {
-    console.log("Received cart data:", message.data);
-    if (message.data.length > 0) {
-      fetchNutritionData(message.data);
-    } else {
-      document.getElementById("apiResponse").innerText = "No food data found.";
+  // Load saved settings
+  chrome.storage.local.get(["appId", "apiKey", "extensionEnabled"], (data) => {
+    if (data.appId) appIdInput.value = data.appId;
+    if (data.apiKey) apiKeyInput.value = data.apiKey;
+    toggleCheckbox.checked = data.extensionEnabled !== false;
+  });
+
+  // Save button click
+  saveBtn.addEventListener("click", () => {
+    const appId = appIdInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
+    const extensionEnabled = toggleCheckbox.checked;
+
+    if (!appId || !apiKey) {
+      showAlert("App ID and API Key are required.", "danger");
+      return;
     }
-  }
-});
 
-// Function to Fetch Nutrition Data from API
-async function fetchNutritionData(cartItems) {
-  for (const item of cartItems) {
-    const query = item.portionSize !== "unknown" ? `${item.portionSize} ${item.foodName}` : item.foodName;
+    // Disable button and show spinner
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...`;
 
-    const headers = {
-      "x-app-id": CONFIG.APP_ID,
-      "x-app-key": CONFIG.API_KEY,
-      "Content-Type": "application/json",
-    };
+    // Validate credentials with test API request
+    fetch("https://trackapi.nutritionix.com/v2/natural/nutrients", {
+      method: "POST",
+      headers: {
+        "x-app-id": appId,
+        "x-app-key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: "apple" }),
+    })
+      .then((response) => {
+        if (response.ok) return response.json();
+        else throw new Error("Invalid credentials");
+      })
+      .then((data) => {
+        chrome.storage.local.set({ appId, apiKey, extensionEnabled }, () => {
+          showAlert("Settings saved successfully!", "success");
 
-    const requestBody = { query: query };
-
-    try {
-      const response = await fetch(CONFIG.API_URL, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(requestBody),
+          setTimeout(() => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+              if (tabs[0]?.id) chrome.tabs.reload(tabs[0].id);
+            });
+          }, 1000);
+        });
+      })
+      .catch((error) => {
+        console.error("Credential validation failed:", error);
+        showAlert("Invalid App ID or API Key.", "danger");
+      })
+      .finally(() => {
+        // Restore button after request
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
       });
+  });
 
-      const data = await response.json();
-      if (data.foods && data.foods.length > 0) {
-        const food = data.foods[0];
+  // Toggle ON/OFF change handler
+  toggleCheckbox.addEventListener("change", () => {
+    chrome.storage.local.set({ extensionEnabled: toggleCheckbox.checked });
+  });
 
-        // Append data for multiple items
-        const resultHTML = `
-          <strong>${food.food_name}</strong><br>
-          Calories: ${food.nf_calories} kcal<br>
-          Protein: ${food.nf_protein}g<br>
-          Carbs: ${food.nf_total_carbohydrate}g<br>
-          Fat: ${food.nf_total_fat}g<br>
-          <img src="${food.photo.thumb}" alt="Food Image">
-          <hr>
-        `;
+  // Bootstrap alert helper
+  function showAlert(message, type = "success") {
+    alertBox.className = `alert alert-${type}`;
+    alertBox.textContent = message;
+    alertBox.classList.remove("d-none");
+    alertBox.classList.add("show");
 
-        document.getElementById("apiResponse").innerHTML += resultHTML;
-      } else {
-        document.getElementById("apiResponse").innerText = "No data found.";
-      }
-    } catch (error) {
-      document.getElementById("apiResponse").innerText = "API Request Failed.";
-      console.error("Error fetching API:", error);
-    }
+    setTimeout(() => {
+      alertBox.classList.add("d-none");
+      alertBox.classList.remove("show");
+    }, 2500);
   }
-}
-
-// Debugging Button (Manual API Test - Still Available)
-document.getElementById("testApi").addEventListener("click", async function () {
-  const foodItem = document.getElementById("foodInput").value.trim();
-  if (!foodItem) return;
-
-  // Manually trigger API request if the user enters food
-  fetchNutritionData([{ foodName: foodItem, portionSize: "unknown" }]);
 });
