@@ -3,7 +3,6 @@ import { CONFIG } from "./config.js";
 // Listen for messages from content.js (Extracted Food Data)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "cartData") {
-    console.log("Received cart data:", message.data);
     if (message.data.length > 0) {
       fetchNutritionData(message.data);
     } else {
