@@ -1,67 +1,44 @@
-import { CONFIG } from "./config.js";
+document.addEventListener("DOMContentLoaded", () => {
+  const appIdInput = document.getElementById("appId");
+  const apiKeyInput = document.getElementById("apiKey");
+  const toggleCheckbox = document.getElementById("toggleExtension");
+  const saveBtn = document.getElementById("saveBtn");
+  const alertBox = document.getElementById("alertBox");
 
-// Listen for messages from content.js (Extracted Food Data)
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "cartData") {
-    if (message.data.length > 0) {
-      fetchNutritionData(message.data);
-    } else {
-      document.getElementById("apiResponse").innerText = "No food data found.";
-    }
-  }
-});
+  // Load saved settings
+  chrome.storage.local.get(["appId", "apiKey", "extensionEnabled"], (data) => {
+    if (data.appId) appIdInput.value = data.appId;
+    if (data.apiKey) apiKeyInput.value = data.apiKey;
+    toggleCheckbox.checked = data.extensionEnabled !== false;
+  });
 
-// Function to Fetch Nutrition Data from API
-async function fetchNutritionData(cartItems) {
-  for (const item of cartItems) {
-    const query = item.portionSize !== "unknown" ? `${item.portionSize} ${item.foodName}` : item.foodName;
+  // Save button click
+  saveBtn.addEventListener("click", () => {
+    const appId = appIdInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
+    const extensionEnabled = toggleCheckbox.checked;
 
-    const headers = {
-      "x-app-id": CONFIG.APP_ID,
-      "x-app-key": CONFIG.API_KEY,
-      "Content-Type": "application/json",
-    };
+    chrome.storage.local.set({ appId, apiKey, extensionEnabled }, () => {
+      // ✅ Show success alert
+      alertBox.classList.remove("d-none");
+      alertBox.classList.add("show");
 
-    const requestBody = { query: query };
+      // ✅ After short delay, reload the current active tab
+      setTimeout(() => {
+        alertBox.classList.add("d-none");
+        alertBox.classList.remove("show");
 
-    try {
-      const response = await fetch(CONFIG.API_URL, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(requestBody),
-      });
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.tabs.reload(tabs[0].id);
+          }
+        });
+      }, 1000);
+    });
+  });
 
-      const data = await response.json();
-      if (data.foods && data.foods.length > 0) {
-        const food = data.foods[0];
-
-        // Append data for multiple items
-        const resultHTML = `
-          <strong>${food.food_name}</strong><br>
-          Calories: ${food.nf_calories} kcal<br>
-          Protein: ${food.nf_protein}g<br>
-          Carbs: ${food.nf_total_carbohydrate}g<br>
-          Fat: ${food.nf_total_fat}g<br>
-          <img src="${food.photo.thumb}" alt="Food Image">
-          <hr>
-        `;
-
-        document.getElementById("apiResponse").innerHTML += resultHTML;
-      } else {
-        document.getElementById("apiResponse").innerText = "No data found.";
-      }
-    } catch (error) {
-      document.getElementById("apiResponse").innerText = "API Request Failed.";
-      console.error("Error fetching API:", error);
-    }
-  }
-}
-
-// Debugging Button (Manual API Test - Still Available)
-document.getElementById("testApi").addEventListener("click", async function () {
-  const foodItem = document.getElementById("foodInput").value.trim();
-  if (!foodItem) return;
-
-  // Manually trigger API request if the user enters food
-  fetchNutritionData([{ foodName: foodItem, portionSize: "unknown" }]);
+  // Save toggle immediately on change
+  toggleCheckbox.addEventListener("change", () => {
+    chrome.storage.local.set({ extensionEnabled: toggleCheckbox.checked });
+  });
 });
