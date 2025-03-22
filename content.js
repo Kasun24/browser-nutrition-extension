@@ -176,28 +176,38 @@ chrome.storage.local.get(["appId", "apiKey", "extensionEnabled"], (data) => {
     if (!popup) return;
 
     if (errorMsg) {
-      popup.innerHTML = `<p>${errorMsg}</p><button onclick="document.getElementById('nutrition-popup').remove()" style="margin-top:10px; padding:8px 12px; background:crimson; color:white; border:none; border-radius:6px;">❌ Close</button>`;
-      return;
+      popup.innerHTML = `
+        <p>${errorMsg}</p>
+        <button id="close-nutrition-popup" style="margin-top:10px; padding:8px 12px; background:crimson; color:white; border:none; border-radius:6px;">
+          Close
+        </button>`;
+    } else {
+      popup.innerHTML = `
+        <h3 style="margin-bottom: 10px; margin-top:0;"><b>${foodData.food_name}</b> (${foodData.serving_weight_grams}g)</h3>
+        <p style="line-height: 1;"><b>Calories:</b> ${foodData.nf_calories} kcal</p>
+        <p style="line-height: 1;"><b>Protein:</b> ${foodData.nf_protein}g</p>
+        <p style="line-height: 1;"><b>Carbs:</b> ${foodData.nf_total_carbohydrate}g</p>
+        <p style="line-height: 1;"><b>Fat:</b> ${foodData.nf_total_fat}g</p>
+        <div style="text-align: center; margin-top: 15px;">
+          <button id="close-nutrition-popup" style="
+            background-color: crimson;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+          ">Close</button>
+        </div>`;
     }
 
-    popup.innerHTML = `
-      <h3 style="margin-bottom: 10px; margin-top:0;"><b>${foodData.food_name}</b> (${foodData.serving_weight_grams}g)</h3>
-      <p style="line-height: 1;"><b>Calories:</b> ${foodData.nf_calories} kcal</p>
-      <p style="line-height: 1;"><b>Protein:</b> ${foodData.nf_protein}g</p>
-      <p style="line-height: 1;"><b>Carbs:</b> ${foodData.nf_total_carbohydrate}g</p>
-      <p style="line-height: 1;"><b>Fat:</b> ${foodData.nf_total_fat}g</p>
-      <div style="text-align: center; margin-top: 15px;">
-        <button onclick="document.getElementById('nutrition-popup').remove()" style="
-          background-color: crimson;
-          color: white;
-          border: none;
-          padding: 8px 14px;
-          border-radius: 5px;
-          font-weight: bold;
-          cursor: pointer;
-        ">Close</button>
-      </div>
-    `;
+    // Attach close event listener after rendering
+    const closeBtn = document.getElementById("close-nutrition-popup");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        popup.remove();
+      });
+    }
   }
 
   // Only run detection if credentials and toggle are valid
