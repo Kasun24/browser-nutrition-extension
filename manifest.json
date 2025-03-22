@@ -4,13 +4,16 @@
   "version": "1.0",
   "description": "Get real-time nutrition analysis from food websites",
   "permissions": ["scripting", "activeTab"],
-  "background": {
-    "service_worker": "background.js"
-  },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["compromise.min.js", "config.js", "content.js"]
+      "matches": [
+        "*://*.ubereats.com/*",
+        "*://*.mcdonalds.com/*",
+        "*://*.kfc.lk/*",
+        "*://*.burgerking.com/*"
+      ],
+      "js": ["compromise.min.js", "config.js", "content.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
