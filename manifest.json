@@ -19,9 +19,9 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icons/sample.png",
-      "48": "icons/sample.png",
-      "128": "icons/sample.png"
+      "16": "icons/nutrition.png",
+      "48": "icons/nutrition.png",
+      "128": "icons/nutrition.png"
     }
   }
 }
